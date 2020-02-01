@@ -1,0 +1,25 @@
+这是我网站代码直接转制的本地版
+因为负担不起cdn加速的流量费所以给大家提供本地版
+你也可以放在自己的网站上
+瓦片地图来源: https://thatshaman.com
+地图数据来源: 激战2API 数据采集工具:https://github.com/jiangyi0923/GW2-MapGetTool
+地图框架:https://leafletjs.com
+联系我: 
+QQ 375480856
+游戏id : 维爵爷.7046
+美服id :weimangzi.1309
+
+
+
+This is the local version of the code for my website,
+Since we can't afford the traffic fee of CDN acceleration, we offer the local version to everyone,
+You can also put it on your own website,
+Tile map source :https://thatshaman.com
+Map data source :GW2API ,Data acquisition tool:https://github.com/jiangyi0923/GW2-MapGetTool
+Map frame :https://leafletjs.com
+To contact me:
+QQ 375480856
+China game server ID :维爵爷.7046
+game server ID :weimangzi.1309
+
+If you think it is easy to use, please support me, some gold or 20bags, I will be very happy!

@@ -1,0 +1,692 @@
+﻿<html dir="ltr" lang="zh" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title>GW2MAP</title>
+		<link rel="stylesheet" href="./scripts/leaflet.css" />
+		<link rel="stylesheet" href="./scripts/layui/css/layui.css"  media="all">
+		<script src="./scripts/leaflet.js"></script>
+		<script  src = "./scripts/jquery.js"></script>
+		<script  src="./scripts/leaflet.rotatedMarker.js"></script>
+		<style>
+			#map {}
+		
+        .mapfanweiicon{
+			transition: opacity 4.0s linear;
+			font:italic bold 20px arial,sans-serif;
+			color: #FFEC8B;
+			text-shadow: 1px 0 0 #8B4513, 0 1px 0 #8B4513, 
+				0 -1px 0 #8B4513, -1px 0 0 #8B4513, 
+				1px 0 1px #8B4513, 0 1px 1px #8B4513, 
+				0 -1px 1px #8B4513, -1px 0 1px #8B4513;
+        }
+		.mapdituicon{
+			transition: opacity 5.0s linear;
+			font:bold 15px arial,sans-serif;
+			color: #ffffff;
+			text-shadow: 2px 0 0  	#257800, 0 2px 0    #257800, 
+						0 -2px 0  	#257800, -2px 0 0   #257800, 
+						2px 0 2px 	#257800, 0 2px 2px  #257800, 
+						0 -2px 2px  #257800, -2px 0 2px #257800;
+        }
+		.mapdituicon2{
+			transition: opacity 5.0s linear;
+			font:bold 14px arial,sans-serif;
+			color: #FFEC8B;
+			text-shadow: 1px 0 0  	#257800, 0 1px 0    #257800, 
+						0 -1px 0  	#257800, -1px 0 0   #257800, 
+						1px 0 1px 	#257800, 0 1px 1px  #257800, 
+						0 -1px 1px  #257800, -1px 0 1px #257800;
+        }
+		.mapquyuicon{
+			transition: opacity 4.0s linear;
+			font:italic bold 12px arial,sans-serif;
+			color: #ffffff;
+			text-shadow: 1px 0 0 #8B4513, 0 1px 0 #8B4513, 
+				0 -1px 0 #8B4513, -1px 0 0 #8B4513, 
+				1px 0 1px #8B4513, 0 1px 1px #8B4513, 
+				0 -1px 1px #8B4513, -1px 0 1px #8B4513;
+		}
+		</style>
+	</head>
+<body>
+  
+   <script type="text/javascript">
+	if(navigator.platform == 'Win32'){
+			//document.write("<p>为了减少服务器负载在您的浏览器上采用50%显示模式</p>")
+	}
+	</script>
+  
+  <div id="map"></div>
+  <script  src = "./ENdata/dboMapRegion.js"></script>
+  <script  src = "./ENdata/dboMapAdventures.js"></script>
+  <script  src = "./ENdata/dboMapMasteryPoints.js"></script>
+  <script  src = "./ENdata/dboMapPoints.js"></script>
+  <script  src = "./ENdata/dboMapSectors.js"></script>
+  <script  src = "./ENdata/dboMapZone.js"></script>
+  <script  src = "./ENdata/dboMapJP.js"></script>
+  <script  src = "./ENdata/dboMapAchievement.js"></script>
+  <script  src = "./ENdata/guild.js"></script>
+  <script  src = "./ENdata/other.js"></script>
+  <script  src="./scripts/layui/layui.js" charset="utf-8"></script>
+  <script id = "sct" ,type="text/javascript">
+	//--判断浏览器
+	function setvimp(){
+	//if(navigator.platform == 'Win32'){
+	//	$("#map").css('width','50%');
+	//	$("#map").css('height','50%');
+	//	$("#map").css('top','25%');
+	//	$("#map").css('left','25%');
+	//}else{
+		$("#map").css('width','100%');
+		$("#map").css('height','100%');
+	//}
+	};
+	setvimp();
+	//--判断浏览器结束
+	//===设定主要参数开始
+	var mnapAD = Object.values(mnapadventures);//挑战点
+  	var map; //定义地图
+	var mbAttr = 'Map data from &copy; <a href="https://guildwars2.com">guildwars2.com</a> website:' +'<a href="https://gw2sy.top">泰蜜的克鲁</a>API:'+'<a href="https://gw2sy.top/elementor-514">The manual</a>' ,
+		//mbUrl = 'http://img2.gw2sy.top/{id}/{z}/{x}/{y}.jpg';//定义切片图数据图层(cdn加速网站版)
+		mbUrl = './{id}/{z}/{x}/{y}.jpg';//定义切片图数据图层(本地版)
+	var  grayscale   		= L.tileLayer(mbUrl, {id: '1', attribution: mbAttr});//图层
+	var _Unlock_ 			= L.layerGroup();//未知点
+	var _Waypoint_ 			= L.layerGroup();//传送点
+	var _Vista_ 			= L.layerGroup();//观景点
+	var _Landmark_ 			= L.layerGroup(); //地标点
+	var _SkillChallenges_ 	= L.layerGroup();//英雄点
+	var _Tasks_				= L.layerGroup();//爱心
+	var _Adventures_ 		= L.layerGroup();//挑战点
+	var _MasteryPoints_ 	= L.layerGroup();//专精点
+	var _Jump_ 				= L.layerGroup();//跳跳乐
+	var _mapzone_ 			= L.layerGroup();//地图区域
+	var _mapregion_ 		= L.layerGroup();//地图范围
+	var _mapbounds_ 		= L.layerGroup(); //地区范围
+    var _mapboundsname_     = L.layerGroup(); //地区名字
+	var _patch_     		= L.layerGroup(); //成就点或路径
+	var _launchpads_     	= L.layerGroup(); //传送和跳板
+	var _GuildHunt_     	= L.layerGroup(); //公会悬赏
+	var _guildTrek_         = L.layerGroup(); //公会跋涉
+	//定义物品图标参数
+	var LeafIcon = L.Icon.extend({ options: { iconSize:[25, 25], className: 'mapItem-icon',}}); 
+	//定义物品图标
+	var UnlockIcon 			= new LeafIcon({ iconUrl: './scripts/images/Unlock.png'}),
+		WaypointIcon 		= new LeafIcon({ iconUrl: './scripts/images/Waypoint.png'}), 
+		VistaIcon 			= new LeafIcon({ iconUrl: './scripts/images/Vista.png'}),
+		LandmarkIcon 		= new LeafIcon({ iconUrl: './scripts/images/Landmark.png'}),
+		SkillChallengesIcon = new LeafIcon({ iconUrl: './scripts/images/SkillChallenges.png'}),
+		MasteryPointsIcon1 	= new LeafIcon({ iconUrl: './scripts/images/Mastery1.png'}),
+		MasteryPointsIcon2 	= new LeafIcon({ iconUrl: './scripts/images/Mastery2.png'}),
+		MasteryPointsIcon3 	= new LeafIcon({ iconUrl: './scripts/images/Mastery3.png'}),
+		MasteryPointsIcon4 	= new LeafIcon({ iconUrl: './scripts/images/Mastery4.png'}),
+		TasksIcon 			= new LeafIcon({ iconUrl: './scripts/images/Tasks.png'}),
+        UnlockDIGIcon	    = new LeafIcon({ iconUrl: './scripts/images/1128644.png' }),
+		HULANGIcon      	= new LeafIcon({ iconUrl: './scripts/images/1770698.png' }),
+		TUZIIcon      		= new LeafIcon({ iconUrl: './scripts/images/1770699.png' }),
+		FEIYUIcon      		= new LeafIcon({ iconUrl: './scripts/images/1770700.png' }),
+		NIAOLONGIcon      	= new LeafIcon({ iconUrl: './scripts/images/1770701.png' }),
+		SHUICHENGGIcon      = new LeafIcon({ iconUrl: './scripts/images/514379.png' }),
+		AdventuresIcon      = new LeafIcon({ iconUrl: './scripts/images/Adventures.png' }),
+		JINGONGIcon         = new LeafIcon({ iconUrl: './scripts/images/Strike.png' }),
+		JumpIcon     	 	= new LeafIcon({ iconUrl: './scripts/images/jp.png' });
+    //===设定主要参数结束
+	//创建地图
+	map = L.map('map', {
+		minZoom: 1,
+        maxZoom: 7,
+		layers: [grayscale,_Unlock_,_Waypoint_,_Vista_,_Landmark_,_SkillChallenges_,_Tasks_,_Adventures_,_MasteryPoints_,_Jump_,_mapzone_,_mapregion_,_mapboundsname_],
+		continuousWorld: true,
+		crs: L.CRS.Simple
+	});
+	//=============定义地图大小
+	function unproject(coord) {
+        return map.unproject(coord, map.getMaxZoom());
+    }
+	var southWest = unproject([0, 49152]);
+    var northEast = unproject([49152, 0]);
+	var mapbounds = new L.LatLngBounds(southWest, northEast);
+    map.setMaxBounds(mapbounds);
+	map.fitBounds(mapbounds);
+	//====路径模块==开始
+	function getcenterpoion(lat1 , lat2){
+		//得中点坐标
+		var latca = (Math.max(lat1,lat2) - Math.min(lat1,lat2))/2;			
+		var lngcenter = Math.min(lat1,lat2)+latca;
+		return lngcenter;
+	};	
+	
+	function DrawPath_noicon(pathdata, patchcolor, patchto){
+		//pathdata = [[x,y],[x,y]...]数据 patchcolor = 路径颜色 patchto =附加到某图层
+		var dduuuduudto = [] ;
+		for	(var t = 0; t < pathdata.length; t++){
+		dduuuduudto[t]= unproject([pathdata[t][0],pathdata[t][1]]);
+		};
+		L.polyline(dduuuduudto, {color: patchcolor , opacity: 0.8 }).addTo(patchto);
+	};
+	function DrawPath(pathdata , patchicon, patchcolor, patchto){
+		//pathdata = [[x,y],[x,y]...]数据 patchicon = 图片路径 patchcolor = 路径颜色 patchto =附加到某图层
+		var dduuuduud;
+		var dduuuduudto = [] ;
+		for	(var t = 0; t < pathdata.length; t++){
+		if ( t > 0){
+			var dduuuduud2 = pathdata[t];
+			var ang = Math.atan2(dduuuduud2[1] - dduuuduud[1] ,dduuuduud2[0] - dduuuduud[0]) * 180 / Math.PI;//算角度
+			var xc = getcenterpoion(dduuuduud2[0] , dduuuduud[0]);//算中程位置
+			var yc = getcenterpoion(dduuuduud2[1] , dduuuduud[1]);
+			var myIcon = L.icon({iconUrl: patchicon,iconSize: [20, 20]});
+			var tmp =  L.marker(unproject([xc,yc]), {icon: myIcon,rotationAngle: ang+90,rotationOrigin:'center center', zoom:7}).addTo(patchto);//创建图标
+        };
+		dduuuduud = pathdata[t];
+		dduuuduudto[t]= unproject([pathdata[t][0],pathdata[t][1]]);
+		};
+		L.polyline(dduuuduudto, {color: patchcolor , opacity: 0.8 }).addTo(patchto);
+	};
+	function DrawIcon(pathdata , patchicon, patchps, patchto){
+		var DFmyIcon = L.icon({iconUrl: patchicon[0],iconSize: [20, 20]});
+		var DFps = patchps[0];
+		for	(var t = 0; t < pathdata.length; t++){
+			var ps = patchps[t] ;
+			if(patchps[t] == null ){
+				ps = DFps;
+			}
+			if (patchicon[t] != null){
+				var myIcon = L.icon({iconUrl: patchicon[t],iconSize: [20, 20]});
+				var tmp =  L.marker(unproject([pathdata[t][0],pathdata[t][1]]), {icon: myIcon,zoom:7}).bindPopup("<b>" + ps + "</b>").addTo(patchto);
+			}else{
+				var tmp =  L.marker(unproject([pathdata[t][0],pathdata[t][1]]), {icon: DFmyIcon,zoom:7}).bindPopup("<b>" + ps + "</b>").addTo(patchto);
+			}
+			
+		};
+	};
+	//====路径模块==结束
+	//所有跳跃 传送门 过图门 沙门
+	$(launchpads).each(function (){
+			if( this.tepy == 'line'){
+				DrawPath(this.bounds, this.img, this.color, _launchpads_);
+			}else{
+				var myIcon = L.icon({iconUrl: this.img,iconSize: [25, 25]});
+				var templine = [];
+				for	(var t = 0; t < this.bounds.length; t++){
+					var tmp =  L.marker(unproject([this.bounds[t][0],this.bounds[t][1]]), {icon: myIcon,zoom:7}).addTo(_launchpads_);
+					templine[t] = unproject([this.bounds[t][0],this.bounds[t][1]]);
+				};
+				L.polyline(templine, {color: this.color , opacity: 0.8}).addTo(_launchpads_);
+			};
+	});
+	//工会悬赏_GuildHunt_
+	var GuildHuntIcon = L.icon({iconUrl: './scripts/images/bounty.png',iconSize: [25, 25]});
+	function GuildHunt_nosousuo(mingzi,tucheng){
+		$(Bounty).each(function () {
+			if(this.zoneid == mingzi){
+				var tmp =  L.marker(unproject([this.coord[0],this.coord[1]]), {icon: GuildHuntIcon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp).addTo(tucheng);
+				if(this.type == "spawn"){
+					for	(var t = 0; t < this.spawn.length; t++){
+						L.circle(unproject([this.spawn[t][0], this.spawn[t][1]]), {radius: 0.1}).bringToFront().addTo(tucheng);
+					};
+				}else{
+					for	(var t = 0; t < this.paths.length; t++){
+						DrawPath(this.paths[t] , './scripts/images/arrow.png', "#7CFC00", tucheng);
+					};
+				};
+			};
+		});
+	};
+	function GuildHunt_sousuo(ss,tucheng){
+		if (ss != ""){
+			$(Bounty).each(function (){
+			if(this.name.search(ss) != -1 ){
+				var tmp =  L.marker(unproject([this.coord[0],this.coord[1]]), {icon: GuildHuntIcon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp).addTo(tucheng).openPopup();
+				if(this.type == "spawn"){
+					for	(var t = 0; t < this.spawn.length; t++){
+						L.circle(unproject([this.spawn[t][0], this.spawn[t][1]]), {radius: 0.1}).bringToFront().addTo(tucheng);};
+				}else{
+					for	(var t = 0; t < this.paths.length; t++){
+						DrawPath(this.paths[t] , './scripts/images/arrow.png', "#7CFC00", tucheng);};
+				};
+				tucheng.setView(unproject([this.coord[0],this.coord[1]]), 5);
+			};
+			});
+		}else{
+		    map.setView(unproject([centerX, centerY]), 3);
+		};
+	};
+	//工会跋涉
+	var guildTrek_icon = L.icon({iconUrl: './scripts/images/trek.png',iconSize: [20, 20]});
+	function guildTrek_nososu( mingzi, tucheng){
+		$(guildTrek).each(function () {
+			if(this.zoneid == mingzi){
+				//var tmp =  L.marker(unproject(this.coord), {icon: guildTrek_icon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp+"<br><img src='http://img2.gw2sy.top/"+ this.img +"' height='150'width='300'/>").addTo(tucheng);//(cdn加速)
+				var tmp =  L.marker(unproject(this.coord), {icon: guildTrek_icon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp+"<br><img src='./"+ this.img +"' height='150'width='300'/>").addTo(tucheng);//(本地版)
+				DrawPath_noicon(this.path, "#436EEE", tucheng);
+			};
+		});
+	};
+	function guildTrek_sosu( ss, tucheng){
+		if (ss != ""){
+			$(guildTrek).each(function () {
+				if(this.name.search(ss) != -1){
+					//var tmp =  L.marker(unproject(this.coord), {icon: guildTrek_icon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp+"<br><img src='http://img2.gw2sy.top/"+ this.img +"' height='150'width='300'/>").addTo(tucheng).openPopup();//(cdn加速)
+					var tmp =  L.marker(unproject(this.coord), {icon: guildTrek_icon,zoom:7}).bindPopup("<b>" + this.name + "</b><br>"+this.wp+"<br><img src='./"+ this.img +"' height='150'width='300'/>").addTo(tucheng).openPopup();//(本地版)
+					DrawPath_noicon(this.path, "#436EEE", tucheng);
+					map.setView(unproject(this.coord), 7);
+				};
+			});
+		}else{
+		    map.setView(unproject([centerX, centerY]), 3);
+		};
+	};
+	//=======================主模块=====================
+	//定义鼠标指向地图的id
+    var diyige = 0;
+	function a(){
+	//显示大区域名称
+	$(mapregion).each(function () {
+		var myIcon = L.divIcon({
+		html: this.name,
+		className: 'mapfanweiicon',
+		iconSize: [120, 20],});
+        L.marker(unproject([this.label.x, this.label.y]), { icon: myIcon ,zoom:7}).addTo(_mapregion_);
+	});
+	//赋值地图 点 线 范围 区域 区域名
+	for (var i = 0; i < mapzone.length; i++) {
+        //显示每个地图的名字和等级 并且添加点击事件
+        var bounds = [unproject([mapzone[i].area.left, mapzone[i].area.top]), unproject([mapzone[i].area.right, mapzone[i].area.bottom])];
+        //地图覆盖块
+		L.rectangle(bounds, { color: "#257800", opacity: 1, weight: 3, fillOpacity: 0.1, zoneid: mapzone[i].zoneid }).addTo(_mapzone_).bringToBack()
+            .on('mousemove', function (ev) {
+                //当鼠标在这个地图才会历遍数据加载内容
+				var myIc = _Waypoint_.getLayers().length;//根据没个图的传送点数量判断是否加载点
+                if (myIc == 0 && map.getZoom() > 4 && diyige ==0) {
+                    //console.log("---");
+					diyige = ev.sourceTarget.options.zoneid;
+                    $(mappoints).each(function () {
+                    if (diyige == this.zoneid  ) {
+                        switch (this.type) {
+                            case 'unlock':
+                                //console.log(this.itemid);
+								if (this.itemid == 2850||this.itemid == 2080||this.itemid == 2452||this.itemid == 3053) {
+									L.marker(unproject([this.pos.x, this.pos.y]), { icon: UnlockDIGIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+                                } else {
+                                    if (this.itemid == 2633) {
+                                        //飞鱼
+										L.marker(unproject([this.pos.x, this.pos.y]), { icon: FEIYUIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+                                    } else {
+                                        if (this.itemid == 2645) {
+                                            //兔子
+											L.marker(unproject([this.pos.x, this.pos.y]), { icon: TUZIIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+                                        } else {
+                                            if (this.itemid == 2632) {
+                                                //鸟
+												L.marker(unproject([this.pos.x, this.pos.y]), { icon: NIAOLONGIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+                                            } else {
+                                                if (this.itemid == 2774) {
+                                                    //虎狼
+													L.marker(unproject([this.pos.x, this.pos.y]), { icon: HULANGIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+                                                } else {
+                                                    if(this.itemid == 1757){
+													    L.marker(unproject([this.pos.x, this.pos.y]), { icon: SHUICHENGGIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+													}else{
+														L.marker(unproject([this.pos.x, this.pos.y]), { icon: UnlockIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+													}
+                                                }
+                                            }
+                                        }
+                                    }
+                                };
+                                break;
+                            case 'waypoint':
+                                L.marker(unproject([this.pos.x, this.pos.y]), { icon: WaypointIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Waypoint_);
+                                break;
+                            case 'vista':
+                                L.marker(unproject([this.pos.x, this.pos.y]), { icon: VistaIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Vista_);
+                                break;
+                            case 'landmark':
+                                L.marker(unproject([this.pos.x, this.pos.y]), { icon: LandmarkIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>" + this.chat_link + "</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Landmark_);
+                                break;
+                            case 'skill':
+                                L.marker(unproject([this.pos.x, this.pos.y]), { icon: SkillChallengesIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_SkillChallenges_);
+                                break;
+                            case 'task':
+                                L.marker(unproject([this.pos.x, this.pos.y]), { icon: TasksIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Tasks_);
+                                break;
+                        };
+                        //console.log(_Waypoint_.getLayers().length);
+                    }});
+                    $(mapsectors).each(function () {
+                        if (diyige == this.zoneid) {
+                            var myIcon3 = L.divIcon({
+                                html: this.name,
+                                className: 'mapquyuicon',
+                                iconAnchor: [12, 0],
+                                iconSize: [150, 12],
+                            });
+                            L.marker(unproject([this.pos.x, this.pos.y]), { icon: myIcon3, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>regionID: "+ this.itemid).addTo(_mapboundsname_);
+                            var latlngs = new Array();
+		                    for	(var t = 0; t < this.bounds.length -1; t++){
+			                    latlngs[t]= unproject([this.bounds[t][0],this.bounds[t][1]]);};
+		                    L.polygon(latlngs, {opacity :1,fill:false,weight: 1,color: 'red'}).addTo(_mapbounds_);
+                        }
+                    });
+					$(mnapAD).each(function (){
+						if (diyige == this.zoneid){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: AdventuresIcon,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Adventures_);
+						};
+					});
+					$(mapsasterypoints).each(function (){
+						if (diyige == this.zoneid){
+						
+							if(this.region == "Tyria"){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: MasteryPointsIcon1,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_MasteryPoints_);
+							};
+							if(this.region == "Maguuma"){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: MasteryPointsIcon2,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_MasteryPoints_);
+							};
+							if(this.region == "Desert"){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: MasteryPointsIcon3,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_MasteryPoints_);
+							};
+							if(this.region == "Unknown"){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: MasteryPointsIcon4,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_MasteryPoints_);
+							};
+						};
+					});
+					$(jpData).each(function (){
+						if (diyige == this.zoneid){
+							L.marker(unproject([this.pos.x, this.pos.y]), {icon: JumpIcon,zoom: 7}).bindPopup("<b>" + this.name + "</b><br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Jump_);
+						};
+					});
+					$(achievement).each(function (){
+						if (diyige == this.zoneid){
+							var lv = "<h6 align = 'center'>"+this.name+"<br>"+ this.introduce+"</h6>";;
+							var myIcon2 = L.divIcon({html:lv,className: 'mapdituicon2',iconSize: [150, 10]});
+							L.marker(unproject([this.bounds[0][0], this.bounds[0][1]]), { icon: myIcon2 ,zoom:7}).addTo(_patch_);
+							if( this.tepy == 'line'){
+								DrawPath(this.bounds, this.img, this.color, _patch_);
+							}else{
+								DrawIcon(this.bounds, this.img, this.ps, _patch_);
+							};
+							
+						};
+					});
+					GuildHunt_nosousuo(diyige,_GuildHunt_);//公会赏金
+					guildTrek_nososu(diyige,_guildTrek_);//公会跋涉
+					$(other).each(function () {
+						if(diyige == this.zoneid){
+							L.marker(unproject([this.pos.x, this.pos.y]), { icon: JINGONGIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b><br>Simple Small Raid</br>mapID: "+this.zoneid + " itemID: "+ this.itemid).addTo(_Unlock_);
+					}
+					});
+					if(diyige == 1203 ){
+						var shengtan =[
+							//{ "name": '东南部圣坛',"pos": { "x": 15913, "y": 26365}},
+							//{ "name": '西南部圣坛',"pos": { "x": 14847, "y": 26410}},
+							//{ "name": '西北部圣坛',"pos": { "x": 14462, "y": 25511}},
+							//{ "name": '东北部圣坛',"pos": { "x": 16024, "y": 25374}}
+							
+							{ "name": 'Southeast Shrine',"pos": { "x": 15913, "y": 26365}},
+							{ "name": 'Southwest Shrine',"pos": { "x": 14847, "y": 26410}},
+							{ "name": 'Northwest Shrine',"pos": { "x": 14462, "y": 25511}},
+							{ "name": 'Northeast Shrine',"pos": { "x": 16024, "y": 25374}}
+						];
+						var shengtanIcon 	= new LeafIcon({ iconUrl: './scripts/images/Shrine.png'});
+						$(shengtan).each(function (){
+							L.marker(unproject([this.pos.x, this.pos.y]), { icon: shengtanIcon, zoom: 7 }).bindPopup("<b>" + this.name + "</b></br>mapID: 1203 location: [" + this.pos.x + "," +this.pos.y + "]").addTo(_Waypoint_);
+						});
+					};
+                } else {
+                    if (diyige != ev.sourceTarget.options.zoneid) {
+                            _Unlock_.clearLayers();  //清理图层
+                            _Waypoint_.clearLayers();  
+                            _Vista_.clearLayers();  
+                            _Landmark_ .clearLayers();  
+                            _SkillChallenges_.clearLayers();  
+							_MasteryPoints_.clearLayers();  
+                            _Tasks_.clearLayers();  
+                            _Adventures_.clearLayers();  
+                            _mapboundsname_.clearLayers();
+                            _mapbounds_.clearLayers();
+							_Jump_.clearLayers();
+							_patch_.clearLayers();
+							_GuildHunt_.clearLayers();
+							_guildTrek_.clearLayers();
+                            diyige = 0;
+                    };
+                }
+            }
+            );
+		//设置单个地图名
+		var lv;
+		if (mapzone[i].level.min == 0|| mapzone[i].level.min == mapzone[i].level.max){
+			lv = "<h6 align = 'center'>"+mapzone[i].name+"("+mapzone[i].level.max+")<br>";
+		}else
+		{
+			lv = "<h6 align = 'center'>"+mapzone[i].name+"("+mapzone[i].level.min + "-"+mapzone[i].level.max+")<br>";
+		}
+		if(mapzone[i].items[0] > 0){
+			lv+= "<img id='compman' src='./scripts/images/Tasks.png' height='12'width='12'  />"+mapzone[i].items[0]
+		};
+		if(mapzone[i].items[1] > 0){
+			lv+= "<img id='compman' src='./scripts/images/SkillChallenges.png' height='12'width='12'  />"+mapzone[i].items[1]
+		};
+		if(mapzone[i].items[2] > 0){
+			lv+= "<img id='compman' src='./scripts/images/Waypoint.png' height='12'width='12'  />"+mapzone[i].items[2]
+		};
+		if(mapzone[i].items[3] > 0){
+			lv+= "<img id='compman' src='./scripts/images/Vista.png' height='12'width='12'  />"+mapzone[i].items[3]
+		};
+		if(mapzone[i].items[4] > 0){
+			lv+= "<img id='compman' src='./scripts/images/Landmark.png' height='12'width='12'  />"+mapzone[i].items[4]
+		};
+		if(mapzone[i].items[5] > 0){
+			lv+= "<img id='compman' src='./scripts/images/Mastery.png' height='12'width='12'  />"+mapzone[i].items[5]
+		};
+		lv+="</h6>";
+		var nnn = mapzone[i].name;
+		var myIcon2 = L.divIcon({
+		html:  lv,
+		className: 'mapdituicon',
+		iconAnchor: [10, 0],
+		iconSize: [150, 10],});
+        L.marker(unproject([((mapzone[i].area.right - mapzone[i].area.left )/3.5)+mapzone[i].area.left, ((mapzone[i].area.bottom - mapzone[i].area.top )/3.5)+mapzone[i].area.top]), { icon: myIcon2 ,zoom:7}).addTo(_mapzone_);
+		};
+	//======定义控件显示内容
+		var overlays  = {
+		"map region"		:_mapregion_,
+		"map bounds"		:_mapbounds_,
+		"map bounds name"		:_mapboundsname_,
+		"Unlock"        	:_Unlock_,
+        "Waypoint"        	:_Waypoint_,
+        "Vista"      	:_Vista_,
+        "Landmark"        	:_Landmark_,
+        "Tasks"        	:_Tasks_,
+        "SkillChallenges"        	:_SkillChallenges_,
+        "Adventures"        	:_Adventures_,
+		"MasteryPoints"		:_MasteryPoints_,
+		"Jump"        :_Jump_,
+		"patch"		:_patch_,
+		"launchpads"	:_launchpads_,
+		"Guild Hunt"		:_GuildHunt_,
+		"Guild Trek"		:_guildTrek_
+        };
+	//======添加控件
+        L.control.layers(null, overlays ).addTo(map);
+	//======添加地图缩放事件	
+        map.on('zoomend', function (ev) {
+            zooms = map.getZoom();
+            if (zooms == 1 || zooms == 2) {
+                $(".mapfanweiicon").css('display', 'block');
+                $(".mapdituicon"  ).css('display', 'none' );
+                $(".mapItem-icon" ).css('display', 'none' );
+                $(".mapquyuicon"  ).css('display', 'none' );
+            } else if (zooms == 3 || zooms == 4) {
+                $(".my-div-icon"  ).css('display', 'none' );
+                $(".mapdituicon"  ).css('display', 'block');
+                $(".mapItem-icon" ).css('display', 'none' );
+                $(".mapquyuicon"  ).css('display', 'none' );
+            } else if (zooms == 5 || zooms == 6 || zooms == 7) {
+                $(".mapfanweiicon").css('display', 'none' );
+                $(".mapdituicon"  ).css('display', 'none' );
+                $(".mapItem-icon" ).css('display', 'block');
+                $(".mapquyuicon"  ).css('display', 'block');
+            }
+        });
+      };
+	//=======================主模块结束===================
+	//===点击位置提示
+	$("#map").append('<div id="worldmapcoords" style="position:absolute; bottom:18px; right:0px; display:block; background-color:rgba(255,255,255,0.7); font-family:consolas; z-index:900;"></div>');
+    function onMapClick(e) {
+        $('#worldmapcoords').text( 'Click on[' + Math.round( 10 * map.project(e.latlng, 7).x )/10 + ', ' + Math.round( 10 * map.project(e.latlng, 7).y )/10 + ']' );
+		console.log('Click on ' + Math.round( 10 * map.project(e.latlng, 7).x )/10 + ', ' + Math.round( 10 * map.project(e.latlng, 7).y )/10);
+	};
+	//===添加点击事件
+	map.on("click", onMapClick);  
+	//===添加滑块控件开始
+	<!-- layui.use('slider', function(){ -->
+		<!-- var $ = layui.$ , slider = layui.slider; -->
+		<!-- slider.render({elem: '#slideTest5',min: 0,max: 3,value: 1,step: 1 ,showstep: true ,type: 'vertical'  -->
+		<!-- ,change: function(value){ -->
+			<!-- grayscale.remove(); -->
+			<!-- //if ( value == 1){ -->
+			<!-- //	mbUrl = 'http://img2.gw2sy.top/{id}/{z}/{x}/{y}.jpg'; -->
+			<!-- //} else{ -->
+			<!-- //	mbUrl = 'https://tiles.guildwars2.com/1/{id}/{z}/{x}/{y}.jpg'; -->
+			<!-- //} -->
+			<!-- grayscale = L.tileLayer(mbUrl, {id: value, attribution: mbAttr}).addTo(map); -->
+		<!-- }}); -->
+	<!-- }); -->
+	<!-- L.Control.Watermark = L.Control.extend({ -->
+		<!-- onAdd: function(map) { -->
+			<!-- var img = L.DomUtil.create('div'); -->
+			<!-- img.id = 'slideTest5'; -->
+			<!-- return img; -->
+		<!-- }, -->
+		<!-- onRemove: function(map) {} -->
+	<!-- }); -->
+	<!-- L.control.watermark = function(opts) {return new L.Control.Watermark(opts);}; -->
+	<!-- L.control.watermark({ position: 'bottomleft' }).addTo(map); -->
+	//===添加滑块控件结束
+	//===获取网址参数开始
+	function getUrlParam (name) {
+	var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
+	var r = window.location.search.substr(1).match(reg);
+	if (r != null) return decodeURIComponent(r[2]); return null;};
+	
+	var Urlset1 = getUrlParam('zoneid');
+	var Urlset2 = getUrlParam('item');
+	var Urlset3 = getUrlParam('sector');
+	var Urlset4 = getUrlParam('x');
+	var Urlset5 = getUrlParam('y');
+	var Urlset6 = getUrlParam('cx');
+	var Urlset7 = getUrlParam('cy');
+	var Urlset8 = getUrlParam('search');
+	var Urlset9 = getUrlParam('jp');
+	var Urlset10 = getUrlParam('hunt');
+	var Urlset11 = getUrlParam('trek');//trek
+	function SETimgtomap(pox,poy){//跳转位置并张贴选取图片
+		if(pox > 0 && poy > 0 ){
+			var myIcon2 = L.icon({iconUrl: './scripts/images/Event_Mark.png',iconSize: [70, 70]});
+			L.marker(unproject([pox, poy]), { icon: myIcon2 ,zoom:7}).addTo(map).on('dblclick', function (ev) {this.remove();});
+			map.setView(unproject([pox, poy]), 7);
+		}else{
+		map.setView(unproject([centerX, centerY]), 3);
+		};
+	};
+	function GetSearchxy(ZO){
+		var posx,posy;
+		$(mappoints).each(function () {
+			if ( this.name == ZO ){
+				posx = this.pos.x ; posy = this.pos.y ;
+			}else{
+				var tmp = ZO.substr(0,ZO.length-1);
+				tmp +="。";
+				if(this.name == tmp){
+					posx = this.pos.x ; posy = this.pos.y ;
+				};
+			};
+		});
+		SETimgtomap(posx,posy);
+	};
+	function getJPxy(SE){
+		var posx,posy;
+		$(jpData).each(function () {
+			if ( this.itemid == SE || this.name == SE){
+				posx = this.pos.x ; posy = this.pos.y ;
+			};
+		});
+		SETimgtomap(posx,posy);
+	};
+	function getpostxy(ZO , IT){
+		var posx,posy;
+		$(mappoints).each(function () {
+			if ( this.zoneid == ZO && this.itemid == IT ){
+				posx = this.pos.x ; posy = this.pos.y ;
+			};
+		});
+		$(mnapAD).each(function () {
+			if ( this.zoneid == ZO && this.itemid == IT ){
+				posx = this.pos.x ; posy = this.pos.y ;
+			};
+		});
+		$(mapsasterypoints).each(function () {
+			if ( this.zoneid == ZO && this.itemid == IT ){
+				posx = this.pos.x ; posy = this.pos.y ;
+			};
+		});
+		$(jpData).each(function () {
+			if ( this.zoneid == ZO && this.itemid == IT ){
+				posx = this.pos.x ; posy = this.pos.y ;
+			};
+		});
+		SETimgtomap(posx,posy);
+	};
+	function getsectorxy(SE){
+		if(SE != ""){
+			var posx,posy;
+			$(mapsectors).each(function () {
+				if ( this.itemid == SE || this.name == SE){
+					posx = this.pos.x ; posy = this.pos.y ;
+				};
+			});
+			SETimgtomap(posx,posy);
+		}else{
+			map.setView(unproject([centerX, centerY]), 3);
+		};
+	};
+	function SetPostxy(S , E){
+		SETimgtomap(S,E);
+	};
+	function SetCirclexy(S , E){
+			L.circle(unproject([S, E]), {radius: 1}).bringToFront().addTo(map).on('dblclick', function (ev) {this.remove();});
+			map.setView(unproject([S, E]), 7);
+	};
+	//===获取网址参数结束
+	//====设置第一次打开默认显示位置
+	var rect = [[15232,14336],[17664,15872]];
+    var centerX = (rect[0][0] + rect[1][0]) / 2;
+    var centerY = (rect[0][1] + rect[1][1]) / 2;
+	//===判读网址后缀参数
+	if(Urlset1 > 0  && Urlset2 != null ){
+		getpostxy(Urlset1 , Urlset2);
+	}else if( Urlset3 != null){
+		getsectorxy(Urlset3);
+	}else if( Urlset9 != null){
+		getJPxy(Urlset9);
+	}else if( Urlset8 != null){
+		GetSearchxy(Urlset8);
+	}else if( Urlset11 != null){
+		guildTrek_sosu(Urlset11,map);
+	}else if( Urlset10 != null){
+		GuildHunt_sousuo(Urlset10,map);
+	}else if( Urlset4 > 0 && Urlset5 > 0){
+		SetPostxy(Urlset4,Urlset5);
+	}else if( Urlset6 > 0 && Urlset7 > 0){
+		SetCirclexy(Urlset6,Urlset7);//
+	}else{
+		map.setView(unproject([centerX, centerY]), 3);
+	};
+	//===判定网址后缀参数结束
+	//map.setView(unproject([centerX, centerY]), 3); 设置地图首次显示位置和层级
+    //显示地图
+	a();
+  </script>
+</body>
+</html>
